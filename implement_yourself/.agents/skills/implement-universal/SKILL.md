@@ -15,7 +15,7 @@ This is the harness-agnostic twin of `/implement`. It is functionally identical,
 Use this skill when running in any harness that does NOT have Claude Code's subagent dispatch (Cursor, Windsurf, generic MCP clients, plain Anthropic SDK loops, etc.). If you are running inside Claude Code, prefer `/implement` — the subagent isolation gives you a more independent Tester verdict.
 
 ```
-new feature branch → SWE role implements (+ AC walk on glue tickets) → role switch → Tester role verifies (logic tickets only) → orchestrator moves file to tasks/done/ → orchestrator commits directly with `git commit -m` → report to human
+new feature branch → SWE role implements (+ diagrams + AC walk on glue tickets) → role switch → Tester role verifies (logic tickets only) → diagram checkpoint → orchestrator moves file to tasks/done/ → orchestrator commits directly with `git commit -m` → report to human
 ```
 
 After the report, **the session ends**. The human reviews the commit, talks the workshop audience through what happened, optionally amends or pushes, then re-invokes for the next ticket.
@@ -118,23 +118,26 @@ This step is the orchestrator's responsibility. Do NOT defer it to the SWE phase
 
 Use your harness's task-tracking tool (`TaskCreate` in Claude Code, or an equivalent visible checklist) to make progress inspectable. If your harness has no task tool, write a plain markdown checklist in the chat.
 
-**Logic ticket** (4 items):
+**Logic ticket** (5 items):
 
 - `[SWE phase] implement {NNN-slug}` (in_progress immediately)
 - `[Tester phase] verify {NNN-slug}` — blocked by SWE
-- `[Done] move ticket to tasks/done/` — blocked by Tester
+- `[Diagram] verify diagram artifacts + palette` — blocked by Tester
+- `[Done] move ticket to tasks/done/` — blocked by Tester + Diagram
 - `[Commit] git commit on implementing/from-scratch` — blocked by Done
 
-**Glue/bootstrap ticket** (3 items — Tester phase is skipped):
+**Glue/bootstrap ticket** (4 items — Tester phase is skipped):
 
 - `[SWE phase] implement + AC walk {NNN-slug}` (in_progress immediately)
-- `[Done] spot-check + move ticket to tasks/done/` — blocked by SWE
+- `[Diagram] verify diagram artifacts + palette` — blocked by SWE
+- `[Done] spot-check + move ticket to tasks/done/` — blocked by SWE + Diagram
 - `[Commit] git commit on implementing/from-scratch` — blocked by Done
 
-**Docs ticket** (3 items — Tester HARD-OFF, no AC walk):
+**Docs ticket** (4 items — Tester HARD-OFF, no AC walk):
 
 - `[SWE phase] write docs {NNN-slug}` (in_progress immediately)
-- `[Done] confirm file(s) exist + move ticket to tasks/done/` — blocked by SWE
+- `[Diagram] verify docs diagram artifacts + palette` — blocked by SWE
+- `[Done] confirm file(s) exist + move ticket to tasks/done/` — blocked by SWE + Diagram
 - `[Commit] git commit on implementing/from-scratch` — blocked by Done
 
 No parallel branches. Mark items complete as each phase finishes.
@@ -153,12 +156,16 @@ Then execute the SWE workflow it describes against this ticket:
 - Immutable scaffolding (do NOT modify): `Makefile`, `pyproject.toml`, `.python-version`, `.env.example`, `scripts/`, `src/writing/profiles/*.md`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, and any file already inside `tasks/done/`. The ticket's "Out of scope" section may list more.
 - Run `make format-fix && make lint-fix` until clean. Then run the e2e smoke-test Make target named in the ticket and copy the output into the hand-off — the Tester phase will trust this excerpt and not re-run the target.
 - **`make eval-online` is BANNED.** Never run it.
+- Diagram requirement (all ticket archetypes): generate/update diagram artifacts,
+  use Mermaid as baseline, generate Drawio + Excalidraw when MCP servers are
+  available, and report explicit fallback when unavailable. Use palette token
+  `DIAGRAM_PALETTE=workshop-light`.
 
 Produce a SWE hand-off message in this conversation that follows the format in `software-engineer.md` for the matching archetype:
 
 - **logic** → Tester-bound hand-off (files changed, format/lint excerpt, e2e excerpt, per-AC implementation summary, "READY FOR QA").
-- **glue/bootstrap** → orchestrator-bound hand-off with a complete **AC walk** (PASS + concrete evidence per AC, "READY FOR ORCHESTRATOR SPOT-CHECK").
-- **docs** → minimal hand-off (file paths + line counts + outline-match note, "READY FOR FILE-EXISTENCE CHECK").
+- **glue/bootstrap** → orchestrator-bound hand-off with a complete **AC walk** (PASS + concrete evidence per AC, diagram artifact list + palette evidence, "READY FOR ORCHESTRATOR SPOT-CHECK").
+- **docs** → minimal hand-off (file paths + diagram paths + line counts + outline-match note, "READY FOR FILE-EXISTENCE CHECK").
 
 DO NOT commit. DO NOT move files to `tasks/done/`. The orchestrator handles both in step 7.
 
@@ -192,11 +199,13 @@ When the QA report is complete, mark the `[Tester phase]` task complete and proc
 
 ### Docs tickets — fast-path verification
 
-For docs tickets the spot-check is just a file existence + non-empty check. Skip the full AC re-read.
+For docs tickets the spot-check is docs + diagram file existence + non-empty checks. Skip the full AC re-read.
 
 ```bash
 ls -la implement_yourself/path/to/README.md   # confirm exists
 wc -l implement_yourself/path/to/README.md    # confirm non-empty (>10 lines)
+ls -la implement_yourself/path/to/diagram.mmd # confirm Mermaid diagram exists
+wc -l implement_yourself/path/to/diagram.mmd  # confirm non-empty
 ```
 
 If both succeed, accept and proceed to step 7. If the file is missing or empty, re-enter the SWE phase with the gap. Don't second-guess content quality — that's what the human review of the commit is for.
@@ -212,6 +221,8 @@ For each criterion marked PASS, confirm:
 - On logic tickets: the 1 break path has a real command + output excerpt.
 - On glue/bootstrap tickets: every AC has direct evidence in the SWE's hand-off.
 - No criterion was skipped or hand-waved as "covered by other criteria."
+- Diagram artifacts exist (Mermaid required; Drawio/Excalidraw when available in this harness).
+- Diagram content reflects implemented behavior and includes palette evidence (`workshop-light`).
 
 Common rubber-stamp red flags (REJECT and re-run the appropriate phase with the gap as feedback):
 
@@ -220,10 +231,12 @@ Common rubber-stamp red flags (REJECT and re-run the appropriate phase with the 
 - AC requiring a budget-cap behavior marked PASS without showing both the success and the `budget_exceeded` payload.
 - A logic-ticket break path marked PASS without an output excerpt.
 - A glue-ticket AC asserting "prompt is listable" / "resource is readable" / "skill YAML parses" / "README links resolve" marked PASS without showing the proof command.
+- A ticket with missing diagram artifact list in SWE hand-off, or missing Mermaid fallback when Drawio/Excalidraw are unavailable.
 
 Outcomes:
 
 - **PASS (verified).** Mark `[Tester phase]` complete (logic tickets) and proceed to step 7.
+- **PASS (verified).** Mark `[Tester phase]` complete (logic tickets), then mark `[Diagram]` complete after the explicit diagram checkpoint passes.
 - **FAIL or PASS-but-rubber-stamped.** Re-enter the SWE phase with concrete feedback (failing AC, evidence gaps, suggested fixes). Re-read `agents/software-engineer.md` to reset, then apply the fixes, re-run `make format-fix && make lint-fix`, re-run the e2e target, and produce a new hand-off. Then re-run step 5 (logic tickets) or re-spot-check the AC walk (glue tickets).
 
 ### Cap: 3 FAIL cycles per ticket
@@ -288,6 +301,7 @@ Print a single markdown block:
 **Branch:** `{current branch — `implementing/from-scratch` by default}` ({N} commits ahead of `main`).
 **Mode:** single-context (no subagent isolation).
 **Archetype:** {logic | glue/bootstrap | docs}. {Tester phase ran | Tester phase skipped — verified via SWE AC walk + orchestrator spot-check | Tester HARD-OFF — verified via `ls` + `wc -l`}.
+**Diagrams:** Mermaid {path}; Drawio {path or not-available}; Excalidraw {path or not-available}; palette evidence `{workshop-light}`.
 **Files changed** ({N}): `path/to/a.py`, `path/to/b.py`, …
 **E2E command:** `make {target}` — passed (per SWE excerpt).
 **Format/lint:** `make format-fix && make lint-fix` — passed.

@@ -73,6 +73,14 @@ Follow `CLAUDE.md` conventions strictly:
 
 When the ticket lists exact field names, signatures, or placeholder names — match them byte-for-byte. The Tester phase will check.
 
+Diagram artifacts are mandatory for all ticket archetypes:
+
+- Generate or update diagrams that reflect what shipped.
+- Mermaid (`.mmd`) is required as the baseline artifact.
+- Generate Drawio (`.drawio`) and Excalidraw (`.excalidraw`) artifacts when those MCP tools are available.
+- If a diagram tool is unavailable, explicitly report the fallback in your hand-off and still provide Mermaid.
+- Use the shared palette token `workshop-light` and include palette evidence in hand-off artifacts.
+
 ### Step 5 — Tests (when applicable)
 
 The workshop's verification path is the immutable scripts in `implement_yourself/scripts/` (`test_research_workflow.py`, `test_writing_workflow.py`, `run_evaluation.py`, `run_online_evaluation.py`, `upload_eval_dataset.py`) plus the Make targets that invoke them. Most tickets do **not** require new test files — the e2e fixtures are sufficient.
@@ -107,7 +115,7 @@ Match the format below for the archetype the orchestrator handed you.
 
 - **logic** → Tester phase runs; produce a Tester-bound hand-off with format/lint, e2e, per-AC implementation summary.
 - **glue/bootstrap** → Tester phase skipped; produce an orchestrator-bound hand-off with a **complete AC walk** (concrete evidence per AC).
-- **docs** → Tester HARD-OFF, AC walk dropped; produce a minimal hand-off (file paths + line counts + one-line outline match). No format/lint, no e2e.
+- **docs** → Tester HARD-OFF, AC walk dropped; produce a minimal hand-off (file paths + diagram paths + line counts + one-line outline match). No format/lint, no e2e.
 
 **Logic ticket** — produce a Tester-bound hand-off:
 
@@ -121,6 +129,12 @@ Match the format below for the archetype the orchestrator handed you.
 **Format/lint:** `make format-fix && make lint-fix` — clean. (Output excerpt: `...`)
 
 **E2E:** `make {target}` — passed. (Output excerpt: `Status: success ...`)
+
+**Diagram artifacts:**
+- Mermaid: `path/to/flow.mmd`
+- Drawio: `path/to/flow.drawio` (or `not-available` + reason)
+- Excalidraw: `path/to/flow.excalidraw` (or `not-available` + reason)
+- Palette evidence: `workshop-light` used in diagram metadata/style block.
 
 **Implementation summary (per AC):**
 - AC1: Implemented in `path/to/file.py:LN`. Verified by running `...`.
@@ -144,6 +158,12 @@ READY FOR QA.
 
 **E2E:** `make {target}` — passed. (Output excerpt: `...`)
 
+**Diagram artifacts:**
+- Mermaid: `path/to/flow.mmd`
+- Drawio: `path/to/flow.drawio` (or `not-available` + reason)
+- Excalidraw: `path/to/flow.excalidraw` (or `not-available` + reason)
+- Palette evidence: `workshop-light` used in diagram metadata/style block.
+
 **AC walk (concrete evidence per AC):**
 - AC1: PASS — evidence: `cat path/to/file.md` returned `<excerpt>`.
 - AC2: PASS — evidence: `uv run python -c "from research.routers.prompts import ..."` printed `<excerpt>`.
@@ -161,7 +181,11 @@ The AC walk is your complete verification — nothing else verifies these ticket
 
 **Files written:**
 - `path/to/README.md` ({N} lines)
-- ...
+- `path/to/flow.mmd` ({N} lines)
+- `path/to/flow.drawio` ({N} lines or `not-available` + reason)
+- `path/to/flow.excalidraw` ({N} lines or `not-available` + reason)
+
+**Palette evidence:** `workshop-light` used in diagram metadata/style block.
 
 **Outline match:** All sections from the ticket's Scope are present (intro, install, usage, etc.).
 

@@ -17,6 +17,13 @@ You verify one ticket after the SWE phase hands off. You do not write code; if s
 
 Your **headline duty** is the **AC walk** — every Acceptance Criterion gets PASS+evidence or FAIL+reason. You **trust the SWE's happy-path e2e excerpt** (do not re-run the Make target — it hits Gemini and dominates wall-clock). You also run **exactly 1** adversarial break path on logic tickets that have branching behaviour. (Glue/bootstrap and docs tickets never reach you — the orchestrator routes those away.)
 
+Diagram validation is mandatory for logic tickets:
+
+- Mermaid artifact must exist and be non-empty.
+- Drawio/Excalidraw artifacts are required when available in the SWE hand-off; if unavailable, hand-off must include explicit fallback rationale.
+- Diagram narrative must match implemented behavior.
+- Palette evidence must include `workshop-light`.
+
 ## Canonical e2e smoke tests (for reference, not for re-running)
 
 Three Make targets are the project's end-to-end smoke tests. The ticket's Acceptance Criteria almost always name one of them as the verification target, and the SWE's hand-off will include an excerpt from running it:
@@ -119,6 +126,8 @@ For each AC:
 
 In single-context mode, every PASS verdict must cite evidence you can quote. If the only evidence is "the SWE phase implemented this and I remember", run the verification command fresh and quote *its* output.
 
+When diagrams are part of the hand-off, include a dedicated evidence line in the AC walk that checks paths, non-empty content, and palette token usage.
+
 Then write your verdict.
 
 #### Verdict format
@@ -138,6 +147,12 @@ Then write your verdict.
 - [x] AC2 — evidence: `...`
 - [ ] AC3 — FAIL: {reason}
 
+**Diagram checks:**
+- Mermaid: PASS/FAIL — evidence: `ls ...`, `wc -l ...`
+- Drawio: PASS/FAIL — evidence: `ls ...` or `not-available` rationale accepted/rejected
+- Excalidraw: PASS/FAIL — evidence: `ls ...` or `not-available` rationale accepted/rejected
+- Palette: PASS/FAIL — evidence: `grep -i workshop-light ...`
+
 **VERDICT: PASS** (or **FAIL**)
 
 {If FAIL: a "What to fix" bullet list with concrete suggestions.}
@@ -154,6 +169,7 @@ End the Tester phase. The orchestrator decides next steps.
   - The SWE hand-off includes a credible happy-path e2e excerpt for the right Make target.
   - 1 break path was attempted and behaved correctly (or was correctly skipped per the table).
   - Every AC has real, citeable evidence — not memory.
+  - Diagram artifacts are verified (Mermaid required, Drawio/Excalidraw or explicit fallback) and palette evidence includes `workshop-light`.
 - **FAIL** if any of the above is missing — even if the bulk of the ticket works.
 
 Suspicious patterns to investigate (not auto-FAIL, but interrogate):

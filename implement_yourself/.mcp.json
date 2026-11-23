@@ -1,3 +1,34 @@
 {
-  "mcpServers": {}
+  "mcpServers": {
+    "drawio": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "drawio-mcp-server"
+      ],
+      "env": {
+        "DIAGRAM_PALETTE": "workshop-light"
+      }
+    },
+    "mermaid": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mermaid-mcp-server"
+      ],
+      "env": {
+        "DIAGRAM_PALETTE": "workshop-light"
+      }
+    },
+    "excalidraw": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "excalidraw-mcp-server"
+      ],
+      "env": {
+        "DIAGRAM_PALETTE": "workshop-light"
+      }
+    }
+  }
 }
